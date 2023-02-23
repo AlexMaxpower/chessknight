@@ -18,6 +18,9 @@
 - endpoint /horse/servlet/count в виде сервлета (Java Servlet)
 - endpoint /horse/rest/count в виде Spring Controller (RestController)
 
+* Добавить endpoint с выводом шахматной доски картинкой в формате PNG:
+- endpoint /horse/rest/image
+
 Входные данные передаются через параметры REST сервиса. Результат работы алгоритма печатается в теле Response.
 Приложение должно работать на базе Tomcat c использованием SpringBoot framework.
 
@@ -30,6 +33,10 @@
 запрос вида:
 http://localhost/horse/rest/count?width=10&height=14&start=B1&end=A3
 должен вернуть 1, так как клетка A3 достижима из положения B1 за один ход.
+
+* запрос вида:
+http://localhost/horse/rest/image?width=10&height=14&start=B1&end=A3
+должен вернуть PNG-картинку с шахматной доской
 
 ## Требование к оформлению решения
 Решение должно быть оформлено в git репозитории github.com
