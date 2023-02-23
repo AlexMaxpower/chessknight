@@ -7,6 +7,11 @@ import ru.coolspot.chessknight.model.Node;
 import ru.coolspot.chessknight.service.ChessService;
 import ru.coolspot.chessknight.util.ChessUtil;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Queue;
@@ -16,10 +21,52 @@ import java.util.Set;
 @Service
 public class ChessServiceImpl implements ChessService {
 
+    private int width;
+    private int height;
+    private Node startNode;
+    private Node endNode;
+
     @Override
     public Integer getCount(String widthS, String heightS, String start, String end) {
-        int width;
-        int height;
+        validateAndSet(widthS, heightS, start, end);
+        return findShortestDistance(null);
+    }
+
+    @Override
+    public byte[] getImage(String widthS, String heightS, String start, String end) {
+        validateAndSet(widthS, heightS, start, end);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int imageWidth = width * 50;
+        int imageHeight = height * 50;
+
+        try {
+
+            BufferedImage bi = new BufferedImage(imageWidth, imageHeight,
+                    BufferedImage.TYPE_INT_ARGB);
+            Graphics2D imageBoard = bi.createGraphics();
+
+            imageBoard.setColor(new Color(200, 214, 225));
+            imageBoard.fill3DRect(0, 0, imageWidth, imageHeight, true);
+            imageBoard.setColor(new Color(117, 171, 188));
+            for (int y = height; y > 0; y--) {
+                for (int x = y % 2; x < width; x += 2) {
+                    imageBoard.fill(new Rectangle(x * 50, (y - 1) * 50, 50, 50));
+                }
+            }
+
+            findShortestDistance(imageBoard);
+            setText(imageBoard, startNode.getX(), startNode.getY(), "♞", Color.BLACK);
+
+            ImageIO.write(bi, "PNG", baos);
+
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
+        return baos.toByteArray();
+    }
+
+    private void validateAndSet(String widthS, String heightS, String start, String end) {
         try {
             width = Integer.parseInt(widthS);
         } catch (NumberFormatException e) {
@@ -34,24 +81,24 @@ public class ChessServiceImpl implements ChessService {
         if (width < 1 || height < 1) {
             throw new ValidationException("Размеры доски должны быть больше нуля!");
         }
-        Node startNode = ChessUtil.stringToNode(start);
-        Node endNode = ChessUtil.stringToNode(end);
+        startNode = ChessUtil.stringToNode(start);
+        endNode = ChessUtil.stringToNode(end);
         log.info("width= {}, height= {}, startNode= {}, endNode= {}",
                 width, height, startNode, endNode);
-        return findShortestDistance(startNode, endNode, width, height);
     }
 
-    private Integer findShortestDistance(Node start, Node end, int width, int height) {
-        if (start.getX() < 0 || start.getX() > width - 1) {
+
+    private Integer findShortestDistance(Graphics2D image) {
+        if (startNode.getX() < 0 || startNode.getX() > width - 1) {
             throw new ValidationException("Стартовая позиция по горизонтали невозможна!");
         }
-        if (start.getY() < 0 || start.getY() > height - 1) {
+        if (startNode.getY() < 0 || startNode.getY() > height - 1) {
             throw new ValidationException("Стартовая позиция по вертикали невозможна!");
         }
-        if (end.getX() < 0 || end.getX() > width - 1) {
+        if (endNode.getX() < 0 || endNode.getX() > width - 1) {
             throw new ValidationException("Конечная позиция по горизонтали невозможна!");
         }
-        if (end.getY() < 0 || end.getY() > height - 1) {
+        if (endNode.getY() < 0 || endNode.getY() > height - 1) {
             throw new ValidationException("Конечная позиция по вертикали невозможна!");
         }
 
@@ -61,7 +108,7 @@ public class ChessServiceImpl implements ChessService {
         final int[] col = {-1, 1, 1, -1, 2, -2, 2, -2};
 
         Queue<Node> q = new ArrayDeque<>();
-        q.add(start);
+        q.add(startNode);
 
         while (!q.isEmpty()) {
             Node node = q.poll();
@@ -70,19 +117,25 @@ public class ChessServiceImpl implements ChessService {
             int y = node.getY();
             int dist = node.getDist();
 
-            if (x == end.getX() && y == end.getY()) {
+            if (x == endNode.getX() && y == endNode.getY()) {
+                if (image != null) {
+                    setText(image, x, y, "♞", Color.WHITE);
+                }
                 log.info("Минимальное количество ходов = {}", dist);
                 return dist;
             }
 
             if (!visited.contains(node)) {
                 visited.add(node);
+                if (image != null && node.getDist() != 0) {
+                    setText(image, x, y, String.valueOf(dist), Color.BLACK);
+                }
 
                 for (int i = 0; i < row.length; i++) {
                     int x1 = x + row[i];
                     int y1 = y + col[i];
 
-                    if ((x1 >= 0 && x1 < width - 1) && (y1 >= 0 && y1 < height - 1)) {
+                    if ((x1 >= 0 && x1 < width) && (y1 >= 0 && y1 < height)) {
                         q.add(new Node(x1, y1, dist + 1));
                     }
                 }
@@ -91,5 +144,12 @@ public class ChessServiceImpl implements ChessService {
 
         log.info("Конечное положение недостижимо!");
         return -1;
+    }
+
+    private void setText(Graphics2D image, int x, int y, String message, Color color) {
+        Font font = new Font("TimesRoman", Font.PLAIN, 40);
+        image.setFont(font);
+        image.setPaint(color);
+        image.drawString(message, x * 50 + 6, (height - y) * 50 - 10);
     }
 }

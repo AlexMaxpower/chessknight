@@ -2,7 +2,6 @@ package ru.coolspot.chessknight.model;
 
 import lombok.*;
 
-@EqualsAndHashCode
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -13,4 +12,21 @@ public class Node {
     final int y;
     int dist;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Node node = (Node) o;
+
+        if (x != node.x) return false;
+        return y == node.y;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = x;
+        result = 31 * result + y;
+        return result;
+    }
 }
