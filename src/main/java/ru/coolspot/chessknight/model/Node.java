@@ -4,7 +4,7 @@ import lombok.*;
 
 @RequiredArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = "dist")
+@EqualsAndHashCode(exclude = {"dist", "node"})
 @Getter
 @ToString
 public class Node {
@@ -12,4 +12,5 @@ public class Node {
     final int x;
     final int y;
     int dist;
+    Node node;
 }

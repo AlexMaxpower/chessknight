@@ -21,4 +21,8 @@ public class ChessUtil {
         }
         return new Node(x, y);
     }
+
+    public static String nodeToString(Node node) {
+        return ((char) (node.getX() + 65)) + String.valueOf(node.getY() + 1);
+    }
 }
