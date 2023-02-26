@@ -12,15 +12,14 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 
 @Slf4j
 @Service
 public class ChessServiceImpl implements ChessService {
 
+    private static final int CAGE = 50;
     private int width;
     private int height;
     private Node startNode;
@@ -37,27 +36,35 @@ public class ChessServiceImpl implements ChessService {
         validateAndSet(widthS, heightS, start, end);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        int imageWidth = width * 50;
-        int imageHeight = height * 50;
+        int imageWidth = (width + 2) * CAGE;
+        int imageHeight = (height + 2) * CAGE;
 
         try {
 
             BufferedImage bi = new BufferedImage(imageWidth, imageHeight,
                     BufferedImage.TYPE_INT_ARGB);
             Graphics2D imageBoard = bi.createGraphics();
-
-            imageBoard.setColor(new Color(200, 214, 225));
+            imageBoard.setColor(new Color(5, 8, 153));
             imageBoard.fill3DRect(0, 0, imageWidth, imageHeight, true);
+            imageBoard.setColor(new Color(200, 214, 225));
+            imageBoard.fill3DRect(CAGE, CAGE, imageWidth - 2 * CAGE, imageHeight - 2 * CAGE, true);
             imageBoard.setColor(new Color(117, 171, 188));
             for (int y = height; y > 0; y--) {
+                setText(imageBoard, -1, y - 1, String.valueOf(y), Color.WHITE);
+                setText(imageBoard, width, y - 1, String.valueOf(y), Color.WHITE);
                 for (int x = y % 2; x < width; x += 2) {
-                    imageBoard.fill(new Rectangle(x * 50, (y - 1) * 50, 50, 50));
+                    imageBoard.fill(new Rectangle((x + 1) * CAGE, y * CAGE, CAGE, CAGE));
+                    if (x != 0) {
+                        setText(imageBoard, x, -1, String.valueOf((char) (x + 65)), Color.WHITE);
+                        setText(imageBoard, x - 1, -1, String.valueOf((char) (x + 64)), Color.WHITE);
+                        setText(imageBoard, x, height, String.valueOf((char) (x + 65)), Color.WHITE);
+                        setText(imageBoard, x - 1, height, String.valueOf((char) (x + 64)), Color.WHITE);
+                    }
                 }
             }
 
-            findShortestDistance(imageBoard);
             setText(imageBoard, startNode.getX(), startNode.getY(), "♞", Color.BLACK);
-
+            findShortestDistance(imageBoard);
             ImageIO.write(bi, "PNG", baos);
 
         } catch (IOException ie) {
@@ -81,6 +88,12 @@ public class ChessServiceImpl implements ChessService {
         if (width < 1 || height < 1) {
             throw new ValidationException("Размеры доски должны быть больше нуля!");
         }
+
+        if (width > 26 || height > 26) {
+            throw new ValidationException("Размеры доски не должны быть больше 26!");
+        }
+
+
         startNode = ChessUtil.stringToNode(start);
         endNode = ChessUtil.stringToNode(end);
         log.info("width= {}, height= {}, startNode= {}, endNode= {}",
@@ -119,24 +132,39 @@ public class ChessServiceImpl implements ChessService {
 
             if (x == endNode.getX() && y == endNode.getY()) {
                 if (image != null) {
-                    setText(image, x, y, "♞", Color.WHITE);
+                    setText(image, x, y, "♞", Color.MAGENTA);
                 }
+                List<String> way = new ArrayList<>();
+                Node point = node.getNode();
+                while (point != null && point.getNode() != null) {
+                    if (image != null) {
+                        setText(image, point.getX(), point.getY(),
+                                String.valueOf(point.getDist()), Color.BLACK);
+                    }
+                    way.add(ChessUtil.nodeToString(point));
+                    point = point.getNode();
+                }
+                way.add(ChessUtil.nodeToString(startNode));
+                Collections.reverse(way);
                 log.info("Минимальное количество ходов = {}", dist);
+                StringBuilder wayToLog = new StringBuilder();
+                for (String str : way) {
+                    wayToLog.append(str).append(" -> ");
+                }
+                wayToLog.append(ChessUtil.nodeToString(endNode));
+                log.info("Путь: {}", wayToLog);
                 return dist;
             }
 
             if (!visited.contains(node)) {
                 visited.add(node);
-                if (image != null && node.getDist() != 0) {
-                    setText(image, x, y, String.valueOf(dist), Color.BLACK);
-                }
 
                 for (int i = 0; i < row.length; i++) {
                     int x1 = x + row[i];
                     int y1 = y + col[i];
 
                     if ((x1 >= 0 && x1 < width) && (y1 >= 0 && y1 < height)) {
-                        q.add(new Node(x1, y1, dist + 1));
+                        q.add(new Node(x1, y1, dist + 1, node));
                     }
                 }
             }
@@ -150,6 +178,7 @@ public class ChessServiceImpl implements ChessService {
         Font font = new Font("TimesRoman", Font.PLAIN, 40);
         image.setFont(font);
         image.setPaint(color);
-        image.drawString(message, x * 50 + 6, (height - y) * 50 - 10);
+        int padding = message.length() < 2 && !message.equals("♞") ? 14 : 2;
+        image.drawString(message, x * CAGE + padding + CAGE, (height - y) * CAGE - 10 + CAGE);
     }
 }

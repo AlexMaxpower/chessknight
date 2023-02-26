@@ -18,7 +18,7 @@
 - endpoint /horse/servlet/count в виде сервлета (Java Servlet)
 - endpoint /horse/rest/count в виде Spring Controller (RestController)
 
-* Добавить endpoint с выводом шахматной доски картинкой в формате PNG:
+Добавить endpoint с выводом шахматной доски картинкой в формате PNG:
 - endpoint /horse/rest/image
 
 Входные данные передаются через параметры REST сервиса. Результат работы алгоритма печатается в теле Response.
@@ -31,14 +31,24 @@
 
 ## Пример
 запрос вида:
-http://localhost/horse/rest/count?width=10&height=14&start=B1&end=A3
+http://localhost:8080/horse/rest/count?width=10&height=14&start=B1&end=A3
 должен вернуть 1, так как клетка A3 достижима из положения B1 за один ход.
 
-* запрос вида:
-http://localhost/horse/rest/image?width=10&height=14&start=B1&end=A3
-должен вернуть PNG-картинку с шахматной доской
+запрос вида:
+http://localhost:8080/horse/rest/image?width=8&height=8&start=A1&end=H8
+должен вернуть PNG-картинку с шахматной доской:
+
+![PNG-картинка](a1-h8.png)
 
 ## Требование к оформлению решения
 Решение должно быть оформлено в git репозитории github.com
 В Readme должна быть приложена инструкция по сборке.
 Код должен быть читаем и хорошо декомпозирован. 
+
+## Инструкция по сборке
+Этот проект собирается используя Maven. Для запуска воспользуйтесь следующими командами:
+```bash
+git clone https://github.com/AlexMaxpower/chessknight.git
+cd chessknight
+mvn package spring-boot:run
+```
