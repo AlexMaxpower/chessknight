@@ -21,6 +21,9 @@
 Добавить endpoint с выводом шахматной доски картинкой в формате PNG:
 - endpoint /horse/rest/image
 
+Добавить endpoint с выводом координат клеток пути коня:
+- endpoint /horse/rest/way
+
 Входные данные передаются через параметры REST сервиса. Результат работы алгоритма печатается в теле Response.
 Приложение должно работать на базе Tomcat c использованием SpringBoot framework.
 
@@ -39,6 +42,11 @@ http://localhost:8080/horse/rest/image?width=8&height=8&start=A1&end=H8
 должен вернуть PNG-картинку с шахматной доской:
 
 ![PNG-картинка](a1-h8.png)
+
+запрос вида:
+http://localhost:8080/horse/rest/way?width=8&height=8&start=A1&end=H8
+должен вернуть путь:
+A1 -> C2 -> E1 -> G2 -> H4 -> G6 -> H8
 
 ## Требование к оформлению решения
 Решение должно быть оформлено в git репозитории github.com

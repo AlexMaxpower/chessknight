@@ -26,9 +26,15 @@ public class ChessServiceImpl implements ChessService {
     private Node endNode;
 
     @Override
-    public Integer getCount(String widthS, String heightS, String start, String end) {
+    public String getCount(String widthS, String heightS, String start, String end) {
         validateAndSet(widthS, heightS, start, end);
-        return findShortestDistance(null);
+        return findShortestDistance(null).get("count");
+    }
+
+    @Override
+    public String getWay(String widthS, String heightS, String start, String end) {
+        validateAndSet(widthS, heightS, start, end);
+        return findShortestDistance(null).get("way");
     }
 
     @Override
@@ -101,7 +107,8 @@ public class ChessServiceImpl implements ChessService {
     }
 
 
-    private Integer findShortestDistance(Graphics2D image) {
+    private Map<String, String> findShortestDistance(Graphics2D image) {
+
         if (startNode.getX() < 0 || startNode.getX() > width - 1) {
             throw new ValidationException("Стартовая позиция по горизонтали невозможна!");
         }
@@ -114,6 +121,8 @@ public class ChessServiceImpl implements ChessService {
         if (endNode.getY() < 0 || endNode.getY() > height - 1) {
             throw new ValidationException("Конечная позиция по вертикали невозможна!");
         }
+
+        Map<String, String> resultMap = new HashMap<>();
 
         Set<Node> visited = new HashSet<>();
 
@@ -146,14 +155,17 @@ public class ChessServiceImpl implements ChessService {
                 }
                 way.add(ChessUtil.nodeToString(startNode));
                 Collections.reverse(way);
+
                 log.info("Минимальное количество ходов = {}", dist);
+                resultMap.put("count", String.valueOf(dist));
                 StringBuilder wayToLog = new StringBuilder();
                 for (String str : way) {
                     wayToLog.append(str).append(" -> ");
                 }
                 wayToLog.append(ChessUtil.nodeToString(endNode));
                 log.info("Путь: {}", wayToLog);
-                return dist;
+                resultMap.put("way", wayToLog.toString());
+                return resultMap;
             }
 
             if (!visited.contains(node)) {
@@ -171,14 +183,23 @@ public class ChessServiceImpl implements ChessService {
         }
 
         log.info("Конечное положение недостижимо!");
-        return -1;
+        resultMap.put("count", "-1");
+        resultMap.put("way", "-1");
+        return resultMap;
     }
 
     private void setText(Graphics2D image, int x, int y, String message, Color color) {
-        Font font = new Font("TimesRoman", Font.PLAIN, 40);
+        int size = 40;
+        int paddingX = message.length() < 2 && !message.equals("♞") ? 14 : 2;
+        int paddingY = 10;
+        if (x < 0 || y < 0 || x == width || y == height) {
+            size = 20;
+            paddingX = 20;
+            paddingY = 20;
+        }
+        Font font = new Font("TimesRoman", Font.PLAIN, size);
         image.setFont(font);
         image.setPaint(color);
-        int padding = message.length() < 2 && !message.equals("♞") ? 14 : 2;
-        image.drawString(message, x * CAGE + padding + CAGE, (height - y) * CAGE - 10 + CAGE);
+        image.drawString(message, x * CAGE + paddingX + CAGE, (height - y) * CAGE - paddingY + CAGE);
     }
 }

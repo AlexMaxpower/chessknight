@@ -12,7 +12,7 @@ public class ChessServiceTest {
 
     @Test
     public void shouldReturnCorrectDistance() {
-        assertEquals(1, cs.getCount("8", "8", "B3", "A1"),
+        assertEquals("1", cs.getCount("8", "8", "B3", "A1"),
                 "Дистанция должна быть равна 1 ходу");
     }
 
@@ -66,7 +66,7 @@ public class ChessServiceTest {
 
     @Test
     public void shouldReturnZeroWhenStartEqualsEnd() {
-        assertEquals(0, cs.getCount("8", "8", "A1", "A1"),
+        assertEquals("0", cs.getCount("8", "8", "A1", "A1"),
                 "Дистанция должна быть равна 0");
     }
 
@@ -136,7 +136,7 @@ public class ChessServiceTest {
 
     @Test
     public void shouldReturnNegativeWhenEndUnreachable() {
-        assertEquals(-1, cs.getCount("2", "3", "A1", "B2"),
+        assertEquals("-1", cs.getCount("2", "3", "A1", "B2"),
                 "Дистанция должна быть равна 0");
     }
 }
