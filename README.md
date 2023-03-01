@@ -46,6 +46,7 @@ http://localhost:8080/horse/rest/image?width=8&height=8&start=A1&end=H8
 запрос вида:
 http://localhost:8080/horse/rest/way?width=8&height=8&start=A1&end=H8
 должен вернуть путь:
+
 A1 -> C2 -> E1 -> G2 -> H4 -> G6 -> H8
 
 ## Требование к оформлению решения
