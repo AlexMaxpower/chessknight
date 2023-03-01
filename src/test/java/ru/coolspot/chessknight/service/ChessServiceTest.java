@@ -1,6 +1,7 @@
 package ru.coolspot.chessknight.service;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 import ru.coolspot.chessknight.exception.ValidationException;
 import ru.coolspot.chessknight.service.impl.ChessServiceImpl;
 
@@ -8,7 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ChessServiceTest {
-    final ChessService cs = new ChessServiceImpl();
+    ChessService cs = new ChessServiceImpl();
+
+    public ChessServiceTest() {
+        ReflectionTestUtils.setField(cs, "cache", "false");
+    }
 
     @Test
     public void shouldReturnCorrectDistance() {

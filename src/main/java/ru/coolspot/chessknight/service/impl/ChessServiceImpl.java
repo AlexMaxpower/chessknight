@@ -1,6 +1,8 @@
 package ru.coolspot.chessknight.service.impl;
 
+
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.coolspot.chessknight.exception.ValidationException;
 import ru.coolspot.chessknight.model.Node;
@@ -10,20 +12,28 @@ import ru.coolspot.chessknight.util.ChessUtil;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Queue;
+import java.util.*;
 
 @Slf4j
 @Service
 public class ChessServiceImpl implements ChessService {
 
     private static final int CAGE = 50;
+
+    @Value("${cache:false}")
+    private String cache;
+
     private int width;
     private int height;
     private Node startNode;
     private Node endNode;
+    private String filename;
 
     @Override
     public String getCount(String widthS, String heightS, String start, String end) {
@@ -42,6 +52,18 @@ public class ChessServiceImpl implements ChessService {
         validateAndSet(widthS, heightS, start, end);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        if (cache.equalsIgnoreCase("true")) {
+            log.info("Ищем файл {} с результатами", filename + ".png");
+            try {
+                byte[] resultImage = Files.readAllBytes(Paths.get(filename + ".png"));
+                log.info("Отдаем картинку из файла {}", filename + ".png");
+                return resultImage;
+            } catch (IOException e) {
+                log.info("Ошибка получения данных");
+            }
+        }
+
         int imageWidth = (width + 2) * CAGE;
         int imageHeight = (height + 2) * CAGE;
 
@@ -72,9 +94,12 @@ public class ChessServiceImpl implements ChessService {
             setText(imageBoard, startNode.getX(), startNode.getY(), "♞", Color.BLACK);
             findShortestDistance(imageBoard);
             ImageIO.write(bi, "PNG", baos);
-
+            if (cache.equalsIgnoreCase("true")) {
+                log.info("Кеширование картинки в файл {}", filename + ".png");
+                ImageIO.write(bi, "PNG", new File(filename + ".png"));
+            }
         } catch (IOException ie) {
-            ie.printStackTrace();
+            log.error("Записать файл не удалось!");
         }
         return baos.toByteArray();
     }
@@ -99,15 +124,8 @@ public class ChessServiceImpl implements ChessService {
             throw new ValidationException("Размеры доски не должны быть больше 26!");
         }
 
-
         startNode = ChessUtil.stringToNode(start);
         endNode = ChessUtil.stringToNode(end);
-        log.info("width= {}, height= {}, startNode= {}, endNode= {}",
-                width, height, startNode, endNode);
-    }
-
-
-    private Map<String, String> findShortestDistance(Graphics2D image) {
 
         if (startNode.getX() < 0 || startNode.getX() > width - 1) {
             throw new ValidationException("Стартовая позиция по горизонтали невозможна!");
@@ -122,7 +140,30 @@ public class ChessServiceImpl implements ChessService {
             throw new ValidationException("Конечная позиция по вертикали невозможна!");
         }
 
+        log.info("width= {}, height= {}, startNode= {}, endNode= {}",
+                width, height, startNode, endNode);
+        filename = widthS + "-" + heightS + "-" + start + "-" + end;
+    }
+
+    private Map<String, String> findShortestDistance(Graphics2D image) {
+
         Map<String, String> resultMap = new HashMap<>();
+
+        if (cache.equalsIgnoreCase("true") && image == null) {
+            log.info("Ищем файл {} с результатами", filename + ".txt");
+            try (BufferedReader fileReader = new BufferedReader(new FileReader(filename + ".txt",
+                    StandardCharsets.UTF_8))) {
+                resultMap.put("count", fileReader.readLine());
+                resultMap.put("way", fileReader.readLine());
+                log.info("Отдаем данные из файла: count= {} way= {}",
+                        resultMap.get("count"), resultMap.get("way"));
+                return resultMap;
+            } catch (FileNotFoundException e) {
+                log.info("Файл {} не найден!", filename + ".txt");
+            } catch (IOException e) {
+                log.info("Ошибка получения данных");
+            }
+        }
 
         Set<Node> visited = new HashSet<>();
 
@@ -165,6 +206,15 @@ public class ChessServiceImpl implements ChessService {
                 wayToLog.append(ChessUtil.nodeToString(endNode));
                 log.info("Путь: {}", wayToLog);
                 resultMap.put("way", wayToLog.toString());
+                if (cache.equalsIgnoreCase("true")) {
+                    log.info("Кеширование результатов в файл {}", filename + ".txt");
+                    try (FileWriter fileWriter = new FileWriter(filename + ".txt", StandardCharsets.UTF_8)) {
+                        fileWriter.write(dist + "\n");
+                        fileWriter.write(wayToLog.toString());
+                    } catch (IOException e) {
+                        log.error("Записать файл не удалось!");
+                    }
+                }
                 return resultMap;
             }
 
